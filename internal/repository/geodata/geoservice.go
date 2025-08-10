@@ -2,7 +2,7 @@ package geodata
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/OlegLaban/geo-flag/internal/domain"
 	"github.com/OlegLaban/geo-flag/internal/usecase"
@@ -15,18 +15,19 @@ type GeoService interface {
 
 type GeoDataService struct {
 	geoService GeoService
+	logger     *slog.Logger
 }
 
-func NewGeoDataService(gs GeoService) *GeoDataService {
-	return &GeoDataService{geoService: gs}
+func NewGeoDataService(gs GeoService, logger *slog.Logger) *GeoDataService {
+	return &GeoDataService{geoService: gs, logger: logger}
 }
 
 func (gd *GeoDataService) GetCountryData(ctx context.Context) (domain.GeoData, error) {
 	geoData, err := gd.geoService.GetCountryData(ctx)
 	if err != nil {
-		log.Println("Can`t get country data", err)
+		gd.logger.Error("can`t get country data", err)
 		return domain.GeoData{}, err
 	}
-
+	gd.logger.Info("geo data was got success")
 	return usecase.MapModelToDomain(geoData), nil
 } 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 )
 
 type IPService interface {
@@ -25,40 +26,50 @@ type GeoService struct {
 	http      HttpClient
 	IPService IPService
 	cache     CacheInterface
-	useCache  bool
+	logger    *slog.Logger
 }
 
-func NewGeoService(IPService IPService, http HttpClient, cache CacheInterface, useCache bool) *GeoService {
-	return &GeoService{IPService: IPService, http: http, cache: cache, useCache: useCache}
+func NewGeoService(IPService IPService, http HttpClient, cache CacheInterface, logger *slog.Logger) *GeoService {
+	return &GeoService{IPService: IPService, http: http, cache: cache, logger: logger}
 }
 
 func (gs *GeoService) GetCountryData(ctx context.Context) (GeoData, error) {
-	ip, err := gs.IPService.GetPublicIP(ctx)
 	var readCloser io.ReadCloser
+	ip, err := gs.IPService.GetPublicIP(ctx)
 	if err != nil {
+		gs.logger.Error("can`t get public ip", err)
 		return GeoData{}, errors.Join(ErrCantGetIP, err)
 	}
-
+	gs.logger.Info("ip was got successfuly")
 	bytesData, err := gs.cache.GetWithCallback(ip, func() ([]byte, error) {
 		rc, err := gs.loadViaAPI(ctx)
 		if err != nil {
+			gs.logger.Error("can`t get geodata via API", err)
 			return []byte{}, err
 		}
+		gs.logger.Info("geodata was got successfuly via API")
 		return io.ReadAll(rc)
 	})
 	if err != nil {
+		gs.logger.Error("can`t get geodata from cache or API")
 		return GeoData{}, errors.Join(ErrCantGetDataFromCache, err)
 	}
-
+	gs.logger.Info("geodata was got successfuly via cache or API")
 	readCloser = io.NopCloser(bytes.NewReader(bytesData))
 
-	defer readCloser.Close()
+	defer func () {
+		if err := readCloser.Close(); err != nil {
+			gs.logger.Error("can`t close reader with geodata", err)
+		}
+	}()
 
 	var data GeoResponse
 	err = json.NewDecoder(readCloser).Decode(&data)
 	if err != nil {
+		gs.logger.Error("can`t decode geodata to json", err)
 		return GeoData{}, errors.Join(ErrCantDecodeGeoData, err)
 	}
+	gs.logger.Info("geodata was loaded successfuly")
 
 	return GeoData{Country: data.CountryCode, CountryCode: data.CountryCode}, nil
 }
@@ -72,8 +83,9 @@ func (gs *GeoService) loadViaAPI(ctx context.Context) (io.ReadCloser, error) {
 func (gs *GeoService) GetRc(ctx context.Context) (io.ReadCloser, error) {
 	readCloser, err := gs.loadViaAPI(ctx)
 	if err != nil {
+		gs.logger.Error("can`t get geodata via API")
 		return nil, errors.Join(ErrCantGetGeoData, err)
 	}
-
+	gs.logger.Debug("geodata was loaded successfuly")
 	return readCloser, nil
 }

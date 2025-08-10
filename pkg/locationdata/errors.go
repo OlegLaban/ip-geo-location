@@ -7,4 +7,5 @@ var (
 	ErrCantGetIP = errors.New("can`t get ip")
 	ErrCantGetGeoData = errors.New("can`t get geo data")
 	ErrCantDecodeGeoData = errors.New("can`t decode geo data")
+	ErrGetImageViaHttp  = errors.New("can`t get image of flag via http")
 )

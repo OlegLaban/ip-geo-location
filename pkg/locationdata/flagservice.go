@@ -1,22 +1,25 @@
 package locationdata
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
-	"log"
-	"net/http"
+	"log/slog"
 	"strings"
-	"time"
 )
 
-type FlagService struct{}
+type FlagService struct{
+	logger *slog.Logger
+	http   HttpClient
+}
 
-func NewFlagService() *FlagService {
-	return &FlagService{}
+func NewFlagService(http HttpClient, logger *slog.Logger) *FlagService {
+	return &FlagService{http: http, logger: logger}
 }
 
 func (fs *FlagService) CountryCodeToEmoji(code string) string {
+	fs.logger.Debug("try get emoji from coutry code")
 	runes := []rune{}
 	for _, char := range code {
 		if char >= 'A' && char <= 'Z' {
@@ -25,36 +28,27 @@ func (fs *FlagService) CountryCodeToEmoji(code string) string {
 			runes = append(runes, rune(127397+char-32))
 		}
 	}
-	return string(runes)
+	emoji := string(runes) 
+	fs.logger.Debug(fmt.Sprintf("emoji was generate - %s", emoji))
+
+	return emoji 
 }
 
-func (fs *FlagService) CountryCodeToPng(code string) ([]byte, error) {
+func (fs *FlagService) CountryCodeToPng(ctx context.Context, code string) ([]byte, error) {
 	url := fmt.Sprintf("https://flagcdn.com/64x48/%s.png", strings.ToLower(code))
 
-	req, err := http.NewRequest("GET", url, nil)
+	data, err := fs.http.Get(ctx, url)
 	if err != nil {
+		fs.logger.Error("can`t flag image via http", err)
+		return []byte{}, errors.Join(ErrGetImageViaHttp, err)
+	}
+	fs.logger.Debug("request was load success for flag image")
+
+	bytesData, err := io.ReadAll(data)
+	if err != nil {
+		fs.logger.Error("can`t decode body to bytes data for image of flag", err)
 		return []byte{}, err
-	}
-	req.Header.Set("User-Agent", "curl/7.64.1")
+	}	
 
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-		},
-	}
-	maxRetries := 3
-	for i := 0; i < maxRetries; i++ {
-		resp, err := client.Do(req)
-		if err == nil {
-			defer resp.Body.Close()
-
-			body, _ := io.ReadAll(resp.Body)
-			return body, nil
-		}
-		log.Printf("Попытка %d не удалась: %v", i+1, err)
-		time.Sleep(time.Second * 2)
-	}
-
-	return []byte{}, errors.New("can`t get flag")
+	return bytesData, nil
 }

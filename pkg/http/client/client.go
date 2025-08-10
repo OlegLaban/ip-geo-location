@@ -3,20 +3,24 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
 
-type Client struct {}
+type Client struct {
+	logger *slog.Logger
+}
 
-func NewClient() *Client {
-	return &Client{}
+func NewClient(logger *slog.Logger) *Client {
+	return &Client{logger: logger}
 }
 
 func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	c.logger.Debug("Request was created for method GET")
 	if err != nil {
 		return nil, err
 	}
@@ -28,15 +32,16 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 			DisableKeepAlives: true,
 		},
 	}
+	c.logger.Debug("Client was created with timeout and DisableKeepAlives")
 	maxRetries := 3
 	for i := 0; i < maxRetries; i++ {
 		resp, err := client.Do(req)
 		if err == nil {
 			return resp.Body, nil
 		}
-		log.Printf("Попытка %d не удалась: %v", i+1, err)
+		c.logger.Debug(fmt.Sprintf("Trying %d was fail: %d", i+1), err)
 		time.Sleep(time.Second * 2)
 	}
-	return nil, errors.New("can`t get IP")
+	return nil, errors.Join(ErrDoRequest, fmt.Errorf("can`t do request via url %s", url))
 
 }
