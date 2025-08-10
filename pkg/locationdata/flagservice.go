@@ -9,7 +9,12 @@ import (
 	"strings"
 )
 
-type FlagService struct{
+type BaseFlagService struct {
+	logger *slog.Logger
+}
+
+type FlagService struct {
+	BaseFlagService
 	logger *slog.Logger
 	http   HttpClient
 }
@@ -18,7 +23,7 @@ func NewFlagService(http HttpClient, logger *slog.Logger) *FlagService {
 	return &FlagService{http: http, logger: logger}
 }
 
-func (fs *FlagService) CountryCodeToEmoji(code string) string {
+func (fs *BaseFlagService) CountryCodeToEmoji(ctx context.Context, code string) string {
 	fs.logger.Debug("try get emoji from coutry code")
 	runes := []rune{}
 	for _, char := range code {
@@ -28,10 +33,10 @@ func (fs *FlagService) CountryCodeToEmoji(code string) string {
 			runes = append(runes, rune(127397+char-32))
 		}
 	}
-	emoji := string(runes) 
+	emoji := string(runes)
 	fs.logger.Debug(fmt.Sprintf("emoji was generate - %s", emoji))
 
-	return emoji 
+	return emoji
 }
 
 func (fs *FlagService) CountryCodeToPng(ctx context.Context, code string) ([]byte, error) {
@@ -48,7 +53,8 @@ func (fs *FlagService) CountryCodeToPng(ctx context.Context, code string) ([]byt
 	if err != nil {
 		fs.logger.Error("can`t decode body to bytes data for image of flag", err)
 		return []byte{}, err
-	}	
+	}
+	fs.logger.Info("Flag was got success")
 
 	return bytesData, nil
 }

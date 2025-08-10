@@ -18,7 +18,7 @@ import (
 )
 
 type FlagServiceI interface {
-	CountryCodeToEmoji(code string) string
+	CountryCodeToEmoji(ctx context.Context, code string) string
 	CountryCodeToPng(ctx context.Context, code string) ([]byte, error)
 }
 

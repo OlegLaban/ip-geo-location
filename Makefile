@@ -1,0 +1,2 @@
+build-deb:
+	GOOS=linux GOARCH=amd64 go build -ldflags="-X 'github.com/OlegLaban/geo-flag/internal/app.ConfigPath=/etc/ip2country/config.yaml'" -o ./build/linux/ip2country/usr/local/bin/ip2country ./cmd/linux/main.go

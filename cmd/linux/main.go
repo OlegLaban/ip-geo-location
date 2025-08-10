@@ -6,12 +6,10 @@ import (
 	"github.com/OlegLaban/geo-flag/internal/app"
 )
 
-var configPath = "./configs/config.yaml"
-
 func main() {
-	config, err := app.LoadConfig(configPath)
+	config, err := app.LoadConfig(app.ConfigPath)
 	if err != nil {
-		panic(fmt.Sprintf("can`t load config by path - %s", configPath))
+		panic(fmt.Sprintf("can`t load config by path - %s", app.ConfigPath))
 	}
-	app.RunApp(config, )
+	app.RunApp(config)
 }
