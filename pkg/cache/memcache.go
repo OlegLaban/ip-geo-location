@@ -39,7 +39,7 @@ func (cs *CacheService) GetWithCallback(key string, callback func () ([]byte, er
 		cs.logger.Debug(fmt.Sprintf("key - %s, not found, try callback", key))
 		val, err := callback()
 		if err != nil {
-			cs.logger.Error("can`t get data for cache from callback", err)
+			cs.logger.Error("can`t get data for cache from callback", "err", err)
 			return []byte{}, errors.Join(ErrGetDataFromCallback, err)
 		}
 		cs.Set(key, val)

@@ -15,12 +15,13 @@ type BaseFlagService struct {
 
 type FlagService struct {
 	BaseFlagService
+	cache  CacheInterface
 	logger *slog.Logger
 	http   HttpClient
 }
 
-func NewFlagService(http HttpClient, logger *slog.Logger) *FlagService {
-	return &FlagService{http: http, logger: logger}
+func NewFlagService(http HttpClient, cache CacheInterface, logger *slog.Logger) *FlagService {
+	return &FlagService{http: http, cache: cache, logger: logger}
 }
 
 func (fs *BaseFlagService) CountryCodeToEmoji(ctx context.Context, code string) string {
@@ -40,20 +41,28 @@ func (fs *BaseFlagService) CountryCodeToEmoji(ctx context.Context, code string) 
 }
 
 func (fs *FlagService) CountryCodeToPng(ctx context.Context, code string) ([]byte, error) {
-	url := fmt.Sprintf("https://flagcdn.com/64x48/%s.png", strings.ToLower(code))
+	code = strings.ToLower(code)
+	url := fmt.Sprintf("https://flagcdn.com/64x48/%s.png", code)
+	bytesData, err := fs.cache.GetWithCallback(code, func() ([]byte, error) {
+		data, err := fs.http.Get(ctx, url)
+		if err != nil {
+			fs.logger.Error("can`t flag image via http", "err", err)
+			return []byte{}, errors.Join(ErrGetImageViaHttp, err)
+		}
+		fs.logger.Debug("request was load success for flag image")
 
-	data, err := fs.http.Get(ctx, url)
-	if err != nil {
-		fs.logger.Error("can`t flag image via http", err)
-		return []byte{}, errors.Join(ErrGetImageViaHttp, err)
-	}
-	fs.logger.Debug("request was load success for flag image")
+		bytesData, err := io.ReadAll(data)
+		if err != nil {
+			fs.logger.Error("can`t decode body to bytes data for image of flag", "err", err)
+			return []byte{}, err
+		}
+		return bytesData, nil
+	})
 
-	bytesData, err := io.ReadAll(data)
 	if err != nil {
-		fs.logger.Error("can`t decode body to bytes data for image of flag", err)
-		return []byte{}, err
+		fs.logger.Error("can`t get flag data from cache or API", "err", err)
 	}
+
 	fs.logger.Info("Flag was got success")
 
 	return bytesData, nil
