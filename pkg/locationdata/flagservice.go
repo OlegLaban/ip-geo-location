@@ -44,14 +44,14 @@ func (fs *FlagService) CountryCodeToPng(ctx context.Context, code string) ([]byt
 
 	data, err := fs.http.Get(ctx, url)
 	if err != nil {
-		fs.logger.Error("can`t flag image via http", err)
+		fs.logger.Error("can`t flag image via http", "err", err)
 		return []byte{}, errors.Join(ErrGetImageViaHttp, err)
 	}
 	fs.logger.Debug("request was load success for flag image")
 
 	bytesData, err := io.ReadAll(data)
 	if err != nil {
-		fs.logger.Error("can`t decode body to bytes data for image of flag", err)
+		fs.logger.Error("can`t decode body to bytes data for image of flag", "err", err)
 		return []byte{}, err
 	}
 	fs.logger.Info("Flag was got success")
