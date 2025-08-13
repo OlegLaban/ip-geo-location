@@ -1,0 +1,17 @@
+name: CI
+on: [push]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: apt update
+      - run: apt install libayatana-appindicator3-dev -y
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+      - run: go version
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+      - run: golangci-lint run ./...
