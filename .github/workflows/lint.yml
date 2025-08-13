@@ -3,6 +3,9 @@ on: [push]
 jobs:
   lint:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:22.04
+      options: --user root
     steps:
       - uses: actions/checkout@v4
       - run: apt-get update
