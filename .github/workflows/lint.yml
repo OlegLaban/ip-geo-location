@@ -2,24 +2,19 @@ name: CI
 on: [push]
 jobs:
   lint:
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:24.04
-      options: --user root
-    steps:
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get install -y libayatana-appindicator3-dev tzdata nodejs npm 
-        env:
-          DEBIAN_FRONTEND: noninteractive
-      - run: apt-get install libayatana-appindicator3-dev tzdata -y
-      - uses: actions/checkout@v4 
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
-      - run: go version
-      - name: Install golangci-lint v1.55.2
-        run: |
-          curl -sSfL https://github.com/golangci/golangci-lint/releases/download/v1.55.2/golangci-lint-1.55.2-linux-amd64.tar.gz | tar -xz
-          mv golangci-lint-1.55.2-linux-amd64/golangci-lint /usr/local/bin/ 
+   runs-on: ubuntu-latest
+   steps:
+    - name: Install dependencies
+      run: |
+          apt-get update &&  apt-get install -y libayatana-appindicator3-dev tzdata nodejs npm 
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+    - name: Install golangci-lint
+      run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    - name: Run golangci-lint
+      run: golangci-lint run ./...
