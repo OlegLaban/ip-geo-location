@@ -2,11 +2,13 @@ name: CI
 on: [push]
 jobs:
   lint:
-   runs-on: ubuntu-latest
+   runs-on: ubuntu-latest 
    steps:
     - name: Install dependencies
       run: |
-          apt-get update &&  apt-get install -y libayatana-appindicator3-dev tzdata nodejs npm 
+          sudo apt-get update &&  sudo apt-get install -y libayatana-appindicator3-dev
+      env:
+        DEBIAN_FRONTEND: noninteractive
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
