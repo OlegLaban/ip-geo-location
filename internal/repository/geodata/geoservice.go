@@ -10,7 +10,7 @@ import (
 )
 
 type GeoService interface {
-	GetCountryData(ctx context.Context) (locationdata.GeoData, error)	
+	GetCountryData(ctx context.Context) (locationdata.GeoData, error)
 }
 
 type GeoDataService struct {
@@ -30,4 +30,4 @@ func (gd *GeoDataService) GetCountryData(ctx context.Context) (domain.GeoData, e
 	}
 	gd.logger.Info("geo data was got success")
 	return usecase.MapModelToDomain(geoData), nil
-} 
+}

@@ -9,6 +9,6 @@ func MapModelToDomain(geodata locationdata.GeoData) domain.GeoData {
 	return domain.GeoData{
 		CountryCode: geodata.CountryCode,
 		CountryName: geodata.Country,
-		Flag: geodata.Flag,
+		Flag:        geodata.Flag,
 	}
 }

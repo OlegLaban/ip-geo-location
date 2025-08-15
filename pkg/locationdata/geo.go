@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+
+	"github.com/OlegLaban/geo-flag/pkg/cache"
 )
 
 type IPService interface {
@@ -50,14 +52,14 @@ func (gs *GeoService) GetCountryData(ctx context.Context) (GeoData, error) {
 		gs.logger.Info("geodata was got successfuly via API")
 		return io.ReadAll(rc)
 	})
-	if err != nil {
-		gs.logger.Error("can`t get geodata from cache or API", "err", err)
+	if err != nil && !errors.Is(err, cache.ErrSetDatToCache) {
+		gs.logger.Error("can`t get geodata from cache or API")
 		return GeoData{}, errors.Join(ErrCantGetDataFromCache, err)
 	}
 	gs.logger.Info("geodata was got successfuly via cache or API")
 	readCloser = io.NopCloser(bytes.NewReader(bytesData))
 
-	defer func () {
+	defer func() {
 		if err := readCloser.Close(); err != nil {
 			gs.logger.Error("can`t close reader with geodata", "err", err)
 		}

@@ -2,6 +2,6 @@ package common
 
 const (
 	EnvLocal = "local"
-	EnvDev = "dev"
-	EnvProd = "prod"
+	EnvDev   = "dev"
+	EnvProd  = "prod"
 )

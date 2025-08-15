@@ -59,7 +59,7 @@ func RunApp(config *Config) {
 func (a *App) LoadData(logger *slog.Logger) error {
 	geoData, err := a.geoService.GetCountryData(a.Ctx)
 	if err != nil {
-		logger.Error("can`t load geodata", "err", err)	
+		logger.Error("can`t load geodata", "err", err)
 		return errors.Join(ErrLoadGeoData, err)
 	}
 	a.GeoData = geoData
