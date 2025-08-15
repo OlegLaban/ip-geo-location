@@ -85,7 +85,7 @@ func (gs *GeoService) loadViaAPI(ctx context.Context) (io.ReadCloser, error) {
 func (gs *GeoService) GetRc(ctx context.Context) (io.ReadCloser, error) {
 	readCloser, err := gs.loadViaAPI(ctx)
 	if err != nil {
-		gs.logger.Error("can`t get geodata via API")
+		gs.logger.Error("can`t get geodata via API", "err", err)
 		return nil, errors.Join(ErrCantGetGeoData, err)
 	}
 	gs.logger.Debug("geodata was loaded successfuly")

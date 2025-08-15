@@ -47,7 +47,7 @@ func RunApp(config *Config) {
 	cache := cache.NewCacheService(logger)
 	geoPkgService := locationdata.NewGeoService(IPService, httpClient, cache, logger)
 	geoService := geodata.NewGeoDataService(geoPkgService, logger)
-	flagService := locationdata.NewFlagService(httpClient, logger)
+	flagService := locationdata.NewFlagService(httpClient, cache, logger)
 	app := NewApp(flagService, geoService)
 	err := app.LoadData(logger)
 	if err != nil {
