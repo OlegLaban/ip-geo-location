@@ -39,7 +39,7 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 		if err == nil {
 			return resp.Body, nil
 		}
-		c.logger.Debug(fmt.Sprintf("Trying %d was fail: %d", i+1), err)
+		c.logger.Debug(fmt.Sprintf("Trying %d was fail", i+1), "err", err)
 		time.Sleep(time.Second * 2)
 	}
 	return nil, errors.Join(ErrDoRequest, fmt.Errorf("can`t do request via url %s", url))

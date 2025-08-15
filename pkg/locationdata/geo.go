@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+
+	"github.com/OlegLaban/geo-flag/pkg/cache"
 )
 
 type IPService interface {
@@ -37,36 +39,36 @@ func (gs *GeoService) GetCountryData(ctx context.Context) (GeoData, error) {
 	var readCloser io.ReadCloser
 	ip, err := gs.IPService.GetPublicIP(ctx)
 	if err != nil {
-		gs.logger.Error("can`t get public ip", err)
+		gs.logger.Error("can`t get public ip", "err", err)
 		return GeoData{}, errors.Join(ErrCantGetIP, err)
 	}
 	gs.logger.Info("ip was got successfuly")
 	bytesData, err := gs.cache.GetWithCallback(ip, func() ([]byte, error) {
 		rc, err := gs.loadViaAPI(ctx)
 		if err != nil {
-			gs.logger.Error("can`t get geodata via API", err)
+			gs.logger.Error("can`t get geodata via API", "err", err)
 			return []byte{}, err
 		}
 		gs.logger.Info("geodata was got successfuly via API")
 		return io.ReadAll(rc)
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, cache.ErrSetDatToCache) {
 		gs.logger.Error("can`t get geodata from cache or API")
 		return GeoData{}, errors.Join(ErrCantGetDataFromCache, err)
 	}
 	gs.logger.Info("geodata was got successfuly via cache or API")
 	readCloser = io.NopCloser(bytes.NewReader(bytesData))
 
-	defer func () {
+	defer func() {
 		if err := readCloser.Close(); err != nil {
-			gs.logger.Error("can`t close reader with geodata", err)
+			gs.logger.Error("can`t close reader with geodata", "err", err)
 		}
 	}()
 
 	var data GeoResponse
 	err = json.NewDecoder(readCloser).Decode(&data)
 	if err != nil {
-		gs.logger.Error("can`t decode geodata to json", err)
+		gs.logger.Error("can`t decode geodata to json", "err", err)
 		return GeoData{}, errors.Join(ErrCantDecodeGeoData, err)
 	}
 	gs.logger.Info("geodata was loaded successfuly")

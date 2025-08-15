@@ -24,14 +24,18 @@ func (ips *IPService) GetPublicIP(ctx context.Context) (string, error) {
 	ips.logger.Debug("Try get public IP via api.ipify")
 	rc, err := ips.httpClient.Get(ctx, "https://api.ipify.org/")
 	if err != nil {
-		ips.logger.Error("can`t get public ip via api.ipify", err)
+		ips.logger.Error("can`t get public ip via api.ipify", "err", err)
 		return "", errors.Join(ErrGetIP, err)
 	}
 	ips.logger.Debug("request for getting public ip was got successfuly")
-	defer rc.Close()
+	defer func() {
+		if err := rc.Close(); err != nil {
+			ips.logger.Error("can`t close read closer", "err", err)
+		}
+	}()
 	body, err := io.ReadAll(rc)
 	if err != nil {
-		ips.logger.Error("can`t decode body for getting public ip", err)
+		ips.logger.Error("can`t decode body for getting public ip", "err", err)
 		return "", errors.Join(ErrDecodeBody, err)
 	}
 	ip := string(body)
