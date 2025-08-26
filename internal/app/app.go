@@ -7,8 +7,10 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/OlegLaban/geo-flag/internal/config"
 	"github.com/OlegLaban/geo-flag/internal/domain"
 	"github.com/OlegLaban/geo-flag/internal/repository/geodata"
+	"github.com/OlegLaban/geo-flag/internal/usecase"
 	"github.com/OlegLaban/geo-flag/pkg/cache"
 	"github.com/OlegLaban/geo-flag/pkg/http/client"
 	"github.com/OlegLaban/geo-flag/pkg/ipservice"
@@ -20,6 +22,11 @@ import (
 type FlagServiceI interface {
 	CountryCodeToEmoji(ctx context.Context, code string) string
 	CountryCodeToPng(ctx context.Context, code string) ([]byte, error)
+}
+
+type TrayDataI interface {
+	GetIcon() []byte
+	GetTitle() string
 }
 
 type GeoServiceI interface {
@@ -40,7 +47,7 @@ func NewApp(flagSerice FlagServiceI, geoService GeoServiceI) App {
 	return App{Ctx: ctx, Cancel: cancel, flagService: flagSerice, geoService: geoService}
 }
 
-func RunApp(config *Config) {
+func RunApp(config *config.Config) {
 	logger := logger.SetupLogger(config.Env)
 	httpClient := client.NewClient(logger)
 	IPService := ipservice.NewIPService(httpClient, logger)
@@ -49,14 +56,14 @@ func RunApp(config *Config) {
 	geoService := geodata.NewGeoDataService(geoPkgService, logger)
 	flagService := locationdata.NewFlagService(httpClient, cache, logger)
 	app := NewApp(flagService, geoService)
-	err := app.LoadData(logger)
+	err := app.LoadData(logger, config)
 	if err != nil {
 		logger.Error("can`t load data", "err", err)
 	}
 	systray.Run(app.run(config, logger), app.exit(logger))
 }
 
-func (a *App) LoadData(logger *slog.Logger) error {
+func (a *App) LoadData(logger *slog.Logger, config *config.Config) error {
 	geoData, err := a.geoService.GetCountryData(a.Ctx)
 	if err != nil {
 		logger.Error("can`t load geodata", "err", err)
@@ -64,14 +71,18 @@ func (a *App) LoadData(logger *slog.Logger) error {
 	}
 	a.GeoData = geoData
 
-	a.GeoData.Flag, err = a.flagService.CountryCodeToPng(a.Ctx, a.GeoData.CountryCode)
+	flagBytes, err := a.flagService.CountryCodeToPng(a.Ctx, a.GeoData.CountryCode)
 	if err != nil {
 		logger.Error("can`t load flag", "err", err)
 		return errors.Join(ErrLoadFlag, err)
 	}
+	a.GeoData.Flag = flagBytes
+	geoData.Flag = flagBytes
 
-	systray.SetIcon(a.GeoData.Flag)
-	systray.SetTitle(a.GeoData.CountryName)
+	trayData := usecase.NewTrayData(config, geoData)
+
+	systray.SetIcon(trayData.GetIcon())
+	systray.SetTitle(trayData.GetTitle())
 
 	return nil
 }
@@ -83,7 +94,7 @@ func (a *App) exit(logger *slog.Logger) func() {
 	}
 }
 
-func (a *App) run(config *Config, logger *slog.Logger) func() {
+func (a *App) run(config *config.Config, logger *slog.Logger) func() {
 	return func() {
 		ticker := time.NewTicker(time.Duration(config.Round) * time.Second)
 		logger.Info(fmt.Sprintf("ticker was setted success round - %d s", config.Round))
@@ -96,12 +107,10 @@ func (a *App) run(config *Config, logger *slog.Logger) func() {
 					return
 				default:
 				}
-				err := a.LoadData(logger)
+				err := a.LoadData(logger, config)
 				if err != nil {
 					logger.Error("can`t load data", "err", err)
 				}
-				systray.SetIcon(a.GeoData.Flag)
-				systray.SetTitle(a.GeoData.CountryName)
 			}
 		}()
 

@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"os"
@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Env   string
 	Round int
+	IconType string
 }
 
 func LoadConfig(path string) (*Config, error) {
