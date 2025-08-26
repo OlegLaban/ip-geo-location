@@ -36,20 +36,6 @@ func (td *traydata) GetTitle() string {
 	return  td.geoData.CountryName
 }
 
-func countryCodeToFlagEmoji(code string) []byte {
-	runes := []rune{}
-	for _, char := range code {
-		if char >= 'A' && char <= 'Z' {
-			runes = append(runes, rune(127397+char))
-		} else if char >= 'a' && char <= 'z' {
-			runes = append(runes, rune(127397+char-32))
-		}
-	}
-	return []byte(string(runes))
-
-
-}
-
 func GenerateIcon(text string) []byte {
     const size = 24
     const fontSize = 14
