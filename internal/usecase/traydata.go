@@ -27,7 +27,7 @@ func (td *traydata) GetIcon() []byte {
 	case config.ImgIcon:
 		icon = td.geoData.Flag
 	case config.CodeIcon:
-		icon = GenerateIcon("BY")
+		icon = GenerateIcon(td.geoData.CountryCode)
 	}
 	return  icon
 }
