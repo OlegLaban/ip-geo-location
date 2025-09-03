@@ -17,6 +17,7 @@ import (
 	"github.com/OlegLaban/geo-flag/pkg/locationdata"
 	"github.com/OlegLaban/geo-flag/pkg/logger"
 	"github.com/getlantern/systray"
+	"github.com/gen2brain/beeep"
 )
 
 type FlagServiceI interface {
@@ -68,6 +69,9 @@ func (a *App) LoadData(logger *slog.Logger, config *config.Config) error {
 	if err != nil {
 		logger.Error("can`t load geodata", "err", err)
 		return errors.Join(ErrLoadGeoData, err)
+	}
+	if a.GeoData.CountryCode != "" && a.GeoData.CountryCode != geoData.CountryCode {
+		beeep.Notify("Country was changed", "", "")
 	}
 	a.GeoData = geoData
 

@@ -27,7 +27,7 @@ func (td *traydata) GetIcon() []byte {
 	case config.ImgIcon:
 		icon = td.geoData.Flag
 	case config.CodeIcon:
-		icon = GenerateIcon("BY")
+		icon = GenerateIcon(td.geoData.CountryCode)
 	}
 	return  icon
 }
@@ -41,10 +41,9 @@ func GenerateIcon(text string) []byte {
     const fontSize = 14
 
     dc := gg.NewContext(size, size)
-    dc.SetRGBA(0, 0, 0, 1) // прозрачный фон
+    dc.SetRGBA(0, 0, 0, 1)
     dc.Clear()
 
-    // Загрузить шрифт
     err := dc.LoadFontFace("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", fontSize)
     if err != nil {
         log.Println("Font error:", err)
