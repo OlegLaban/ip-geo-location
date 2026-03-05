@@ -44,7 +44,7 @@ type App struct {
 func NewApp(flagSerice FlagServiceI, geoService GeoServiceI) App {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	//TODO - conflict
+	// TODO - second conflict
 	return App{Ctx: ctx, Cancel: cancel, flagService: flagSerice, geoService: geoService}
 }
 
